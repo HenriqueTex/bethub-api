@@ -1,0 +1,187 @@
+import type { HttpContext } from '@adonisjs/core/http'
+import { DateTime } from 'luxon'
+import Bet from '#models/bet'
+import BookmakerAccount from '#models/bookmaker_account'
+import Tipster from '#models/tipster'
+import Method from '#models/method'
+import Market from '#models/market'
+import { betValidator, betUpdateValidator, settleBetValidator } from '#validators/bet'
+import { calculateProfit } from '#services/bet_profit_service'
+import { parseBetFilters, applyBetFilters } from '#services/bet_filter_service'
+
+const round = (value: number) => Math.round(value * 100) / 100
+
+export default class BetsController {
+  async index({ auth, request }: HttpContext) {
+    const qs = request.qs()
+    const page = Math.max(1, Number(qs.page) || 1)
+    const perPage = Math.min(100, Math.max(1, Number(qs.perPage) || 20))
+
+    const query = Bet.query()
+      .where('bets.user_id', auth.user!.id)
+      .preload('account', (accountQuery) => accountQuery.preload('bookmaker'))
+      .preload('tipster')
+      .preload('method')
+      .preload('market')
+      .orderBy('placed_at', 'desc')
+      .orderBy('id', 'desc')
+
+    applyBetFilters(query, parseBetFilters(qs))
+    return query.paginate(page, perPage)
+  }
+
+  async show({ auth, params }: HttpContext) {
+    return Bet.query()
+      .where('user_id', auth.user!.id)
+      .where('id', params.id)
+      .preload('account', (accountQuery) => accountQuery.preload('bookmaker'))
+      .preload('tipster')
+      .preload('method')
+      .preload('market')
+      .firstOrFail()
+  }
+
+  async store({ auth, request, response }: HttpContext) {
+    const user = auth.user!
+    const { marketName, eventDate, placedAt, ...data } = await request.validateUsing(betValidator)
+
+    await this.assertOwnership(user.id, data)
+    const marketId = await this.resolveMarket(user.id, data.marketId, marketName)
+
+    const unitValue = user.unitValue
+    const stakeAmount = data.stakeAmount ?? round(data.units * unitValue)
+
+    const bet = await Bet.create({
+      ...data,
+      tipsterId: data.tipsterId ?? null,
+      methodId: data.methodId ?? null,
+      marketId: marketId ?? null,
+      stakeAmount,
+      unitValue,
+      userId: user.id,
+      eventDate: eventDate ? DateTime.fromJSDate(eventDate) : null,
+      placedAt: placedAt ? DateTime.fromJSDate(placedAt) : DateTime.now(),
+      result: 'pending',
+    })
+
+    await this.loadRelations(bet)
+    return response.created(bet)
+  }
+
+  async update({ auth, request, params }: HttpContext) {
+    const user = auth.user!
+    const bet = await Bet.query().where('user_id', user.id).where('id', params.id).firstOrFail()
+
+    const { marketName, eventDate, placedAt, ...data } =
+      await request.validateUsing(betUpdateValidator)
+
+    await this.assertOwnership(user.id, data)
+
+    if (marketName !== undefined || data.marketId !== undefined) {
+      bet.marketId = await this.resolveMarket(user.id, data.marketId, marketName)
+    }
+    delete data.marketId
+
+    bet.merge(data)
+    if (eventDate !== undefined) {
+      bet.eventDate = eventDate ? DateTime.fromJSDate(eventDate) : null
+    }
+    if (placedAt !== undefined && placedAt) {
+      bet.placedAt = DateTime.fromJSDate(placedAt)
+    }
+    if (data.units !== undefined && data.stakeAmount === undefined) {
+      bet.stakeAmount = round(bet.units * bet.unitValue)
+    }
+
+    if (bet.result !== 'pending') {
+      bet.profitAmount = calculateProfit(bet)
+    }
+
+    await bet.save()
+    await this.loadRelations(bet)
+    return bet
+  }
+
+  async settle({ auth, request, params }: HttpContext) {
+    const bet = await Bet.query()
+      .where('user_id', auth.user!.id)
+      .where('id', params.id)
+      .firstOrFail()
+
+    const { result, cashoutAmount } = await request.validateUsing(settleBetValidator)
+
+    bet.result = result
+    bet.cashoutAmount = result === 'cashout' ? (cashoutAmount ?? 0) : null
+
+    if (result === 'pending') {
+      bet.profitAmount = null
+      bet.settledAt = null
+    } else {
+      bet.profitAmount = calculateProfit(bet)
+      bet.settledAt = bet.settledAt ?? DateTime.now()
+    }
+
+    await bet.save()
+    await this.loadRelations(bet)
+    return bet
+  }
+
+  async destroy({ auth, params, response }: HttpContext) {
+    const bet = await Bet.query()
+      .where('user_id', auth.user!.id)
+      .where('id', params.id)
+      .firstOrFail()
+    await bet.delete()
+    return response.noContent()
+  }
+
+  private async assertOwnership(
+    userId: number,
+    data: { bookmakerAccountId?: number; tipsterId?: number | null; methodId?: number | null }
+  ) {
+    if (data.bookmakerAccountId) {
+      await BookmakerAccount.query()
+        .where('user_id', userId)
+        .where('id', data.bookmakerAccountId)
+        .firstOrFail()
+    }
+    if (data.tipsterId) {
+      await Tipster.query().where('user_id', userId).where('id', data.tipsterId).firstOrFail()
+    }
+    if (data.methodId) {
+      await Method.query().where('user_id', userId).where('id', data.methodId).firstOrFail()
+    }
+  }
+
+  private async resolveMarket(
+    userId: number,
+    marketId: number | null | undefined,
+    marketName: string | undefined
+  ) {
+    if (marketId) {
+      const market = await Market.query()
+        .where('user_id', userId)
+        .where('id', marketId)
+        .firstOrFail()
+      return market.id
+    }
+    if (marketName) {
+      const normalizedName = Market.normalize(marketName)
+      const existing = await Market.query()
+        .where('user_id', userId)
+        .where('normalized_name', normalizedName)
+        .first()
+      if (existing) return existing.id
+      const market = await Market.create({ userId, name: marketName, normalizedName })
+      return market.id
+    }
+    return null
+  }
+
+  private async loadRelations(bet: Bet) {
+    await bet.load('account', (accountQuery) => accountQuery.preload('bookmaker'))
+    if (bet.tipsterId) await bet.load('tipster')
+    if (bet.methodId) await bet.load('method')
+    if (bet.marketId) await bet.load('market')
+  }
+}
