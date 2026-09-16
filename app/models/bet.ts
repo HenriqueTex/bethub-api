@@ -19,6 +19,10 @@ export const BET_RESULTS = [
 
 export type BetResult = (typeof BET_RESULTS)[number]
 
+export const FREEBET_TRIGGERS = ['on_loss', 'on_win', 'always'] as const
+
+export type FreebetTrigger = (typeof FREEBET_TRIGGERS)[number]
+
 const toNumber = (value: unknown) => (value === null ? null : Number(value))
 
 export default class Bet extends BaseModel {
@@ -39,6 +43,9 @@ export default class Bet extends BaseModel {
 
   @column()
   declare marketId: number | null
+
+  @column()
+  declare surebetOperationId: number | null
 
   @column()
   declare event: string
@@ -75,6 +82,21 @@ export default class Bet extends BaseModel {
 
   @column({ consume: toNumber })
   declare profitAmount: number | null
+
+  @column()
+  declare isFreebet: boolean
+
+  @column()
+  declare generatesFreebet: boolean
+
+  @column({ consume: toNumber })
+  declare freebetValue: number | null
+
+  @column({ consume: toNumber })
+  declare freebetExtraction: number | null
+
+  @column()
+  declare freebetTrigger: FreebetTrigger | null
 
   @column.dateTime()
   declare placedAt: DateTime

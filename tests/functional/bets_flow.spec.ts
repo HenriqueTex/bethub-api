@@ -65,6 +65,39 @@ test.group('Fluxo de apostas', (group) => {
     assert.equal(settleResponse.body().stakeAmount, 100)
   })
 
+  test('preserva stake monetário ao editar outros campos com unidades arredondadas', async ({
+    client,
+    assert,
+  }) => {
+    const token = await createUser(client)
+    const accountId = await createAccount(client, token)
+    await client.put('/me/settings').bearerToken(token).json({ unitValue: 30 })
+    const created = await client
+      .post('/bets')
+      .bearerToken(token)
+      .json({
+        bookmakerAccountId: accountId,
+        event: 'A x B',
+        selection: 'A vence',
+        odd: 2,
+        units: 100 / 30,
+        stakeAmount: 100,
+      })
+    created.assertStatus(201)
+    const updated = await client
+      .put(`/bets/${created.body().id}`)
+      .bearerToken(token)
+      .json({ odd: 2.1, units: created.body().units })
+    updated.assertStatus(200)
+    assert.equal(updated.body().stakeAmount, 100)
+    const changed = await client
+      .put(`/bets/${created.body().id}`)
+      .bearerToken(token)
+      .json({ units: 2 })
+    changed.assertStatus(200)
+    assert.equal(changed.body().stakeAmount, 60)
+  })
+
   test('cashout exige valor e calcula lucro', async ({ client, assert }) => {
     const token = await createUser(client)
     const accountId = await createAccount(client, token)
@@ -192,14 +225,17 @@ test.group('Fluxo de apostas', (group) => {
     const accountId = await createAccount(client, token, 1000)
 
     const place = async (odd: number, stake: number) => {
-      const response = await client.post('/bets').bearerToken(token).json({
-        bookmakerAccountId: accountId,
-        event: 'A x B',
-        selection: `sel-${odd}-${stake}`,
-        odd,
-        units: 1,
-        stakeAmount: stake,
-      })
+      const response = await client
+        .post('/bets')
+        .bearerToken(token)
+        .json({
+          bookmakerAccountId: accountId,
+          event: 'A x B',
+          selection: `sel-${odd}-${stake}`,
+          odd,
+          units: 1,
+          stakeAmount: stake,
+        })
       return response.body().id
     }
 

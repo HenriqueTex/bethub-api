@@ -4,6 +4,8 @@ export interface AccountBalance {
   deposits: number
   withdrawals: number
   profit: number
+  extractedFreebets: number
+  pendingFreebets: number
   balance: number
 }
 
@@ -26,12 +28,29 @@ export async function accountBalances(userId: number) {
     .select('bookmaker_account_id')
     .select(db.raw('coalesce(sum(profit_amount), 0) as profit'))
 
+  const freebetRows = await db
+    .from('freebets')
+    .where('user_id', userId)
+    .groupBy('bookmaker_account_id')
+    .select('bookmaker_account_id')
+    .select(
+      db.raw("coalesce(sum(extracted_value) filter (where status = 'extracted'), 0) as extracted"),
+      db.raw("coalesce(sum(extracted_value) filter (where status = 'pending'), 0) as pending")
+    )
+
   const balances = new Map<number, AccountBalance>()
 
   const entry = (accountId: number) => {
     let current = balances.get(accountId)
     if (!current) {
-      current = { deposits: 0, withdrawals: 0, profit: 0, balance: 0 }
+      current = {
+        deposits: 0,
+        withdrawals: 0,
+        profit: 0,
+        extractedFreebets: 0,
+        pendingFreebets: 0,
+        balance: 0,
+      }
       balances.set(accountId, current)
     }
     return current
@@ -46,14 +65,28 @@ export async function accountBalances(userId: number) {
     const current = entry(row.bookmaker_account_id)
     current.profit = Number(row.profit)
   }
+  for (const row of freebetRows) {
+    const current = entry(row.bookmaker_account_id)
+    current.extractedFreebets = Number(row.extracted)
+    current.pendingFreebets = Number(row.pending)
+  }
   for (const current of balances.values()) {
     current.balance =
-      Math.round((current.deposits - current.withdrawals + current.profit) * 100) / 100
+      Math.round(
+        (current.deposits - current.withdrawals + current.profit + current.extractedFreebets) * 100
+      ) / 100
   }
 
   return balances
 }
 
 export function emptyBalance(): AccountBalance {
-  return { deposits: 0, withdrawals: 0, profit: 0, balance: 0 }
+  return {
+    deposits: 0,
+    withdrawals: 0,
+    profit: 0,
+    extractedFreebets: 0,
+    pendingFreebets: 0,
+    balance: 0,
+  }
 }

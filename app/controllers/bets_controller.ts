@@ -5,8 +5,10 @@ import BookmakerAccount from '#models/bookmaker_account'
 import Tipster from '#models/tipster'
 import Method from '#models/method'
 import Market from '#models/market'
+import Freebet from '#models/freebet'
 import { betValidator, betUpdateValidator, settleBetValidator } from '#validators/bet'
 import { calculateProfit } from '#services/bet_profit_service'
+import { syncGeneratedFreebet } from '#services/freebet_generation_service'
 import { parseBetFilters, applyBetFilters } from '#services/bet_filter_service'
 
 const round = (value: number) => Math.round(value * 100) / 100
@@ -51,6 +53,8 @@ export default class BetsController {
     const unitValue = user.unitValue
     const stakeAmount = data.stakeAmount ?? round(data.units * unitValue)
 
+    const generatesFreebet = data.generatesFreebet ?? false
+
     const bet = await Bet.create({
       ...data,
       tipsterId: data.tipsterId ?? null,
@@ -59,6 +63,11 @@ export default class BetsController {
       stakeAmount,
       unitValue,
       userId: user.id,
+      isFreebet: data.isFreebet ?? false,
+      generatesFreebet,
+      freebetValue: generatesFreebet ? (data.freebetValue ?? null) : null,
+      freebetExtraction: generatesFreebet ? (data.freebetExtraction ?? 0) : null,
+      freebetTrigger: generatesFreebet ? (data.freebetTrigger ?? null) : null,
       eventDate: eventDate ? DateTime.fromJSDate(eventDate) : null,
       placedAt: placedAt ? DateTime.fromJSDate(placedAt) : DateTime.now(),
       result: 'pending',
@@ -82,6 +91,7 @@ export default class BetsController {
     }
     delete data.marketId
 
+    const unitsChanged = data.units !== undefined && data.units !== bet.units
     bet.merge(data)
     if (eventDate !== undefined) {
       bet.eventDate = eventDate ? DateTime.fromJSDate(eventDate) : null
@@ -89,8 +99,13 @@ export default class BetsController {
     if (placedAt !== undefined && placedAt) {
       bet.placedAt = DateTime.fromJSDate(placedAt)
     }
-    if (data.units !== undefined && data.stakeAmount === undefined) {
+    if (unitsChanged && data.stakeAmount === undefined) {
       bet.stakeAmount = round(bet.units * bet.unitValue)
+    }
+    if (!bet.generatesFreebet) {
+      bet.freebetValue = null
+      bet.freebetExtraction = null
+      bet.freebetTrigger = null
     }
 
     if (bet.result !== 'pending') {
@@ -98,6 +113,7 @@ export default class BetsController {
     }
 
     await bet.save()
+    await syncGeneratedFreebet(bet)
     await this.loadRelations(bet)
     return bet
   }
@@ -122,6 +138,7 @@ export default class BetsController {
     }
 
     await bet.save()
+    await syncGeneratedFreebet(bet)
     await this.loadRelations(bet)
     return bet
   }
@@ -131,6 +148,7 @@ export default class BetsController {
       .where('user_id', auth.user!.id)
       .where('id', params.id)
       .firstOrFail()
+    await Freebet.query().where('source_bet_id', bet.id).where('status', 'pending').delete()
     await bet.delete()
     return response.noContent()
   }

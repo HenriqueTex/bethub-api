@@ -19,6 +19,9 @@ const MethodsController = () => import('#controllers/methods_controller')
 const MarketsController = () => import('#controllers/markets_controller')
 const SettingsController = () => import('#controllers/settings_controller')
 const BetsController = () => import('#controllers/bets_controller')
+const BetImageAnalysisController = () => import('#controllers/bet_image_analysis_controller')
+const SurebetsController = () => import('#controllers/surebets_controller')
+const FreebetsController = () => import('#controllers/freebets_controller')
 const StatsController = () => import('#controllers/stats_controller')
 
 router.get('/', async () => {
@@ -31,6 +34,7 @@ router
   .group(() => {
     router.post('/register', [AuthController, 'register'])
     router.post('/login', [AuthController, 'login'])
+    router.post('/dev-login', [AuthController, 'devLogin'])
     router.get('/me', [AuthController, 'me']).use(middleware.auth())
     router.delete('/logout', [AuthController, 'logout']).use(middleware.auth())
   })
@@ -69,12 +73,20 @@ router
     router.post('/markets', [MarketsController, 'store'])
     router.delete('/markets/:id', [MarketsController, 'destroy'])
 
+    router.post('/surebets', [SurebetsController, 'store'])
+
     router.get('/bets', [BetsController, 'index'])
+    router.post('/bets/analyze-image', [BetImageAnalysisController, 'store'])
     router.post('/bets', [BetsController, 'store'])
     router.get('/bets/:id', [BetsController, 'show'])
     router.put('/bets/:id', [BetsController, 'update'])
     router.patch('/bets/:id/settle', [BetsController, 'settle'])
     router.delete('/bets/:id', [BetsController, 'destroy'])
+
+    router.get('/freebets', [FreebetsController, 'index'])
+    router.patch('/freebets/:id/extract', [FreebetsController, 'extract'])
+    router.patch('/freebets/:id/discard', [FreebetsController, 'discard'])
+    router.patch('/freebets/:id/reopen', [FreebetsController, 'reopen'])
 
     router.get('/stats/summary', [StatsController, 'summary'])
     router.get('/stats/by', [StatsController, 'by'])
