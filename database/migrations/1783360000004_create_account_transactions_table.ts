@@ -22,10 +22,10 @@ export default class extends BaseSchema {
         .onDelete('CASCADE')
       table.enum('type', ['deposit', 'withdrawal']).notNullable()
       table.decimal('amount', 12, 2).notNullable()
-      table.timestamp('occurred_at').notNullable()
+      table.datetime('occurred_at').notNullable()
       table.text('notes').nullable()
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
+      table.datetime('created_at')
+      table.datetime('updated_at')
 
       table.index(['user_id'])
       table.index(['bookmaker_account_id'])

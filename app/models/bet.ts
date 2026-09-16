@@ -6,6 +6,7 @@ import BookmakerAccount from '#models/bookmaker_account'
 import Tipster from '#models/tipster'
 import Method from '#models/method'
 import Market from '#models/market'
+import { toBoolean, toNumber } from '#models/casts'
 
 export const BET_RESULTS = [
   'pending',
@@ -22,8 +23,6 @@ export type BetResult = (typeof BET_RESULTS)[number]
 export const FREEBET_TRIGGERS = ['on_loss', 'on_win', 'always'] as const
 
 export type FreebetTrigger = (typeof FREEBET_TRIGGERS)[number]
-
-const toNumber = (value: unknown) => (value === null ? null : Number(value))
 
 export default class Bet extends BaseModel {
   @column({ isPrimary: true })
@@ -83,10 +82,10 @@ export default class Bet extends BaseModel {
   @column({ consume: toNumber })
   declare profitAmount: number | null
 
-  @column()
+  @column({ consume: toBoolean })
   declare isFreebet: boolean
 
-  @column()
+  @column({ consume: toBoolean })
   declare generatesFreebet: boolean
 
   @column({ consume: toNumber })

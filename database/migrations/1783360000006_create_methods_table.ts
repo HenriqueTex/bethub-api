@@ -16,8 +16,8 @@ export default class extends BaseSchema {
       table.string('name').notNullable()
       table.text('description').nullable()
       table.boolean('active').notNullable().defaultTo(true)
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
+      table.datetime('created_at')
+      table.datetime('updated_at')
 
       table.index(['user_id'])
     })

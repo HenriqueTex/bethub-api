@@ -38,8 +38,8 @@ export default class extends BaseSchema {
       table.decimal('extracted_value', 12, 2).notNullable()
       table.enum('trigger', ['on_loss', 'on_win', 'always']).notNullable()
       table.enum('status', ['pending', 'extracted', 'discarded']).notNullable().defaultTo('pending')
-      table.timestamp('created_at')
-      table.timestamp('resolved_at').nullable()
+      table.datetime('created_at')
+      table.datetime('resolved_at').nullable()
 
       table.index(['user_id'])
       table.index(['bookmaker_account_id'])

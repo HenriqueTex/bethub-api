@@ -4,6 +4,7 @@ import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import Bookmaker from '#models/bookmaker'
 import AccountTransaction from '#models/account_transaction'
+import { toBoolean } from '#models/casts'
 
 export default class BookmakerAccount extends BaseModel {
   @column({ isPrimary: true })
@@ -21,7 +22,7 @@ export default class BookmakerAccount extends BaseModel {
   @column()
   declare notes: string | null
 
-  @column()
+  @column({ consume: toBoolean })
   declare active: boolean
 
   @column.dateTime({ autoCreate: true })

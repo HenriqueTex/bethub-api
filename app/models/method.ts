@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
+import { toBoolean } from '#models/casts'
 
 export default class Method extends BaseModel {
   @column({ isPrimary: true })
@@ -16,7 +17,7 @@ export default class Method extends BaseModel {
   @column()
   declare description: string | null
 
-  @column()
+  @column({ consume: toBoolean })
   declare active: boolean
 
   @column.dateTime({ autoCreate: true })

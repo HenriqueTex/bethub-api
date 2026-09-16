@@ -15,8 +15,8 @@ export default class extends BaseSchema {
         .onDelete('CASCADE')
       table.string('name').notNullable()
       table.string('normalized_name').notNullable()
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
+      table.datetime('created_at')
+      table.datetime('updated_at')
 
       table.unique(['user_id', 'normalized_name'])
     })

@@ -16,8 +16,10 @@ export async function accountBalances(userId: number) {
     .groupBy('bookmaker_account_id')
     .select('bookmaker_account_id')
     .select(
-      db.raw("coalesce(sum(amount) filter (where type = 'deposit'), 0) as deposits"),
-      db.raw("coalesce(sum(amount) filter (where type = 'withdrawal'), 0) as withdrawals")
+      db.raw("coalesce(sum(case when type = 'deposit' then amount else 0 end), 0) as deposits"),
+      db.raw(
+        "coalesce(sum(case when type = 'withdrawal' then amount else 0 end), 0) as withdrawals"
+      )
     )
 
   const betRows = await db
@@ -34,8 +36,12 @@ export async function accountBalances(userId: number) {
     .groupBy('bookmaker_account_id')
     .select('bookmaker_account_id')
     .select(
-      db.raw("coalesce(sum(extracted_value) filter (where status = 'extracted'), 0) as extracted"),
-      db.raw("coalesce(sum(extracted_value) filter (where status = 'pending'), 0) as pending")
+      db.raw(
+        "coalesce(sum(case when status = 'extracted' then extracted_value else 0 end), 0) as extracted"
+      ),
+      db.raw(
+        "coalesce(sum(case when status = 'pending' then extracted_value else 0 end), 0) as pending"
+      )
     )
 
   const balances = new Map<number, AccountBalance>()

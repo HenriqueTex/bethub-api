@@ -5,12 +5,11 @@ import User from '#models/user'
 import BookmakerAccount from '#models/bookmaker_account'
 import Bet from '#models/bet'
 import type { FreebetTrigger } from '#models/bet'
+import { toNumber } from '#models/casts'
 
 export const FREEBET_STATUSES = ['pending', 'extracted', 'discarded'] as const
 
 export type FreebetStatus = (typeof FREEBET_STATUSES)[number]
-
-const toNumber = (value: unknown) => (value === null ? null : Number(value))
 
 export default class Freebet extends BaseModel {
   @column({ isPrimary: true })

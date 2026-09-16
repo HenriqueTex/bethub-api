@@ -41,13 +41,17 @@ export default class StatsController {
       .where('bets.user_id', userId)
       .select(
         db.raw('count(*) as total_bets'),
-        db.raw("count(*) filter (where result = 'pending') as pending_bets"),
-        db.raw("count(*) filter (where result in ('green', 'half_green')) as wins"),
-        db.raw("count(*) filter (where result in ('red', 'half_red')) as losses"),
-        db.raw("count(*) filter (where result = 'void') as voids"),
-        db.raw("count(*) filter (where result = 'cashout') as cashouts"),
-        db.raw("coalesce(sum(stake_amount) filter (where result != 'pending'), 0) as staked"),
-        db.raw("coalesce(sum(stake_amount) filter (where result = 'pending'), 0) as pending_stake"),
+        db.raw("count(case when result = 'pending' then 1 end) as pending_bets"),
+        db.raw("count(case when result in ('green', 'half_green') then 1 end) as wins"),
+        db.raw("count(case when result in ('red', 'half_red') then 1 end) as losses"),
+        db.raw("count(case when result = 'void' then 1 end) as voids"),
+        db.raw("count(case when result = 'cashout' then 1 end) as cashouts"),
+        db.raw(
+          "coalesce(sum(case when result != 'pending' then stake_amount else 0 end), 0) as staked"
+        ),
+        db.raw(
+          "coalesce(sum(case when result = 'pending' then stake_amount else 0 end), 0) as pending_stake"
+        ),
         db.raw('coalesce(sum(profit_amount), 0) as profit'),
         db.raw(
           'coalesce(sum(profit_amount / nullif(unit_value, 0)), 0) as profit_units'
@@ -93,7 +97,7 @@ export default class StatsController {
       const query = db
         .from('bets')
         .where('bets.user_id', userId)
-        .select(db.raw("to_char(placed_at, 'YYYY-MM') as key"))
+        .select(db.raw("date_format(placed_at, '%Y-%m') as key"))
         .groupBy('key')
         .orderBy('key', 'desc')
       this.selectAggregates(query)
@@ -112,7 +116,7 @@ export default class StatsController {
     query
       .select(db.raw(`${dimension.key} as key`), db.raw(`${dimension.label} as label`))
       .groupByRaw(`${dimension.key}, ${dimension.label}`)
-      .orderByRaw('sum(profit_amount) desc nulls last')
+      .orderByRaw('sum(profit_amount) desc')
     this.selectAggregates(query)
     applyBetFilters(query, filters)
 
@@ -147,10 +151,12 @@ export default class StatsController {
   private selectAggregates(query: any) {
     query.select(
       db.raw('count(*) as total_bets'),
-      db.raw("count(*) filter (where result = 'pending') as pending_bets"),
-      db.raw("count(*) filter (where result in ('green', 'half_green')) as wins"),
-      db.raw("count(*) filter (where result in ('red', 'half_red')) as losses"),
-      db.raw("coalesce(sum(stake_amount) filter (where result != 'pending'), 0) as staked"),
+      db.raw("count(case when result = 'pending' then 1 end) as pending_bets"),
+      db.raw("count(case when result in ('green', 'half_green') then 1 end) as wins"),
+      db.raw("count(case when result in ('red', 'half_red') then 1 end) as losses"),
+      db.raw(
+        "coalesce(sum(case when result != 'pending' then stake_amount else 0 end), 0) as staked"
+      ),
       db.raw('coalesce(sum(profit_amount), 0) as profit'),
       db.raw('coalesce(sum(profit_amount / nullif(unit_value, 0)), 0) as profit_units')
     )

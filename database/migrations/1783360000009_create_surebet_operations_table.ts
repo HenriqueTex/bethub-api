@@ -15,8 +15,8 @@ export default class extends BaseSchema {
         .onDelete('CASCADE')
       table.string('event').notNullable()
       table.text('notes').nullable()
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
+      table.datetime('created_at')
+      table.datetime('updated_at')
 
       table.index(['user_id'])
     })
@@ -34,6 +34,7 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.alterTable('bets', (table) => {
+      table.dropForeign(['surebet_operation_id'])
       table.dropColumn('surebet_operation_id')
     })
     this.schema.dropTable(this.tableName)
