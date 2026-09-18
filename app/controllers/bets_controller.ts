@@ -10,6 +10,7 @@ import { betValidator, betUpdateValidator, settleBetValidator } from '#validator
 import { calculateProfit } from '#services/bet_profit_service'
 import { syncGeneratedFreebet } from '#services/freebet_generation_service'
 import { parseBetFilters, applyBetFilters } from '#services/bet_filter_service'
+import { deleteReceipt, receiptKeyBelongsTo } from '#services/receipt_storage_service'
 
 const round = (value: number) => Math.round(value * 100) / 100
 
@@ -48,6 +49,9 @@ export default class BetsController {
     const { marketName, eventDate, placedAt, ...data } = await request.validateUsing(betValidator)
 
     await this.assertOwnership(user.id, data)
+    if (data.receiptKey && !receiptKeyBelongsTo(data.receiptKey, user.id)) {
+      return response.forbidden({ errors: [{ message: 'Comprovante inválido.' }] })
+    }
     const marketId = await this.resolveMarket(user.id, data.marketId, marketName)
 
     const unitValue = user.unitValue
@@ -77,7 +81,7 @@ export default class BetsController {
     return response.created(bet)
   }
 
-  async update({ auth, request, params }: HttpContext) {
+  async update({ auth, request, params, response }: HttpContext) {
     const user = auth.user!
     const bet = await Bet.query().where('user_id', user.id).where('id', params.id).firstOrFail()
 
@@ -85,6 +89,11 @@ export default class BetsController {
       await request.validateUsing(betUpdateValidator)
 
     await this.assertOwnership(user.id, data)
+    if (data.receiptKey && !receiptKeyBelongsTo(data.receiptKey, user.id)) {
+      return response.forbidden({ errors: [{ message: 'Comprovante inválido.' }] })
+    }
+
+    const previousReceiptKey = bet.receiptKey
 
     if (marketName !== undefined || data.marketId !== undefined) {
       bet.marketId = await this.resolveMarket(user.id, data.marketId, marketName)
@@ -113,6 +122,9 @@ export default class BetsController {
     }
 
     await bet.save()
+    if (previousReceiptKey && previousReceiptKey !== bet.receiptKey) {
+      await deleteReceipt(previousReceiptKey)
+    }
     await syncGeneratedFreebet(bet)
     await this.loadRelations(bet)
     return bet
@@ -150,6 +162,7 @@ export default class BetsController {
       .firstOrFail()
     await Freebet.query().where('source_bet_id', bet.id).where('status', 'pending').delete()
     await bet.delete()
+    if (bet.receiptKey) await deleteReceipt(bet.receiptKey)
     return response.noContent()
   }
 

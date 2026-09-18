@@ -23,6 +23,7 @@ const BetImageAnalysisController = () => import('#controllers/bet_image_analysis
 const SurebetsController = () => import('#controllers/surebets_controller')
 const FreebetsController = () => import('#controllers/freebets_controller')
 const StatsController = () => import('#controllers/stats_controller')
+const BetReceiptsController = () => import('#controllers/bet_receipts_controller')
 
 router.get('/', async () => {
   return {
@@ -77,8 +78,10 @@ router
 
     router.get('/bets', [BetsController, 'index'])
     router.post('/bets/analyze-image', [BetImageAnalysisController, 'store'])
+    router.post('/bets/receipts', [BetReceiptsController, 'store'])
     router.post('/bets', [BetsController, 'store'])
     router.get('/bets/:id', [BetsController, 'show'])
+    router.get('/bets/:id/receipt', [BetReceiptsController, 'show'])
     router.put('/bets/:id', [BetsController, 'update'])
     router.patch('/bets/:id/settle', [BetsController, 'settle'])
     router.delete('/bets/:id', [BetsController, 'destroy'])

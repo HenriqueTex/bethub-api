@@ -106,6 +106,9 @@ export default class Bet extends BaseModel {
   @column()
   declare notes: string | null
 
+  @column()
+  declare receiptKey: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

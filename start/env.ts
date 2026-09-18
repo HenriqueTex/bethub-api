@@ -31,4 +31,14 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   GEMINI_API_KEY: Env.schema.string.optional(),
   GEMINI_MODEL: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Cloudflare R2 (comprovantes de aposta)
+  |----------------------------------------------------------
+  */
+  R2_ENDPOINT: Env.schema.string.optional(),
+  R2_ACCESS_KEY_ID: Env.schema.string.optional(),
+  R2_SECRET_ACCESS_KEY: Env.schema.string.optional(),
+  R2_BUCKET: Env.schema.string.optional(),
 })

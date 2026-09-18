@@ -29,12 +29,16 @@ export const betValidator = vine.compile(
     selection: vine.string().trim().minLength(1).maxLength(200),
     sport: vine.string().trim().maxLength(50).optional().nullable(),
     competition: vine.string().trim().maxLength(100).optional().nullable(),
-    eventDate: vine.date({ formats: { utc: true } }).optional().nullable(),
+    eventDate: vine
+      .date({ formats: { utc: true } })
+      .optional()
+      .nullable(),
     odd: vine.number().min(1.01),
     units: vine.number().positive(),
     stakeAmount: vine.number().positive().optional(),
     placedAt: vine.date({ formats: { utc: true } }).optional(),
     notes: vine.string().trim().maxLength(1000).optional().nullable(),
+    receiptKey: vine.string().trim().maxLength(255).optional().nullable(),
     ...freebetFields,
   })
 )
@@ -50,12 +54,16 @@ export const betUpdateValidator = vine.compile(
     selection: vine.string().trim().minLength(1).maxLength(200).optional(),
     sport: vine.string().trim().maxLength(50).optional().nullable(),
     competition: vine.string().trim().maxLength(100).optional().nullable(),
-    eventDate: vine.date({ formats: { utc: true } }).optional().nullable(),
+    eventDate: vine
+      .date({ formats: { utc: true } })
+      .optional()
+      .nullable(),
     odd: vine.number().min(1.01).optional(),
     units: vine.number().positive().optional(),
     stakeAmount: vine.number().positive().optional(),
     placedAt: vine.date({ formats: { utc: true } }).optional(),
     notes: vine.string().trim().maxLength(1000).optional().nullable(),
+    receiptKey: vine.string().trim().maxLength(255).optional().nullable(),
     ...freebetFields,
   })
 )
