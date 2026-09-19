@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import { parseBetFilters, applyBetFilters } from '#services/bet_filter_service'
 import { accountBalances } from '#services/account_balance_service'
+import { allocateCosts, costsByTipster, totalCosts } from '#services/cost_allocation_service'
 
 const round = (value: number) => Math.round(value * 100) / 100
 
@@ -53,9 +54,7 @@ export default class StatsController {
           "coalesce(sum(case when result = 'pending' then stake_amount else 0 end), 0) as pending_stake"
         ),
         db.raw('coalesce(sum(profit_amount), 0) as profit'),
-        db.raw(
-          'coalesce(sum(profit_amount / nullif(unit_value, 0)), 0) as profit_units'
-        ),
+        db.raw('coalesce(sum(profit_amount / nullif(unit_value, 0)), 0) as profit_units'),
         db.raw('coalesce(avg(odd), 0) as avg_odd')
       )
     applyBetFilters(query, filters)
@@ -69,6 +68,9 @@ export default class StatsController {
     const balances = await accountBalances(userId)
     let totalBalance = 0
     for (const balance of balances.values()) totalBalance += balance.balance
+
+    const costs = totalCosts(await allocateCosts(userId, filters.from, filters.to))
+    const netProfit = round(profit - costs)
 
     return {
       totalBets: Number(row.total_bets),
@@ -85,6 +87,9 @@ export default class StatsController {
       hitRate: wins + losses > 0 ? round((wins / (wins + losses)) * 100) : 0,
       avgOdd: round(Number(row.avg_odd)),
       totalBalance: round(totalBalance),
+      costs,
+      netProfit,
+      netRoi: staked > 0 ? round((netProfit / staked) * 100) : 0,
     }
   }
 
@@ -121,7 +126,22 @@ export default class StatsController {
     applyBetFilters(query, filters)
 
     const rows = await query
-    return rows.map((row) => this.formatRow(row, row.label))
+    if (dimensionName !== 'tipster') {
+      return rows.map((row) => this.formatRow(row, row.label))
+    }
+
+    const byTipster = costsByTipster(await allocateCosts(userId, filters.from, filters.to))
+    return rows.map((row) => {
+      const formatted = this.formatRow(row, row.label)
+      const cost = row.key === null ? 0 : (byTipster.get(Number(row.key)) ?? 0)
+      const netProfit = round(formatted.profit - cost)
+      return {
+        ...formatted,
+        cost,
+        netProfit,
+        netRoi: formatted.staked > 0 ? round((netProfit / formatted.staked) * 100) : 0,
+      }
+    })
   }
 
   async timeline({ auth, request }: HttpContext) {
