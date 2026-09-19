@@ -13,7 +13,7 @@ export {
 function periodBounds(from?: string, to?: string) {
   return {
     from: from ? DateTime.fromISO(from) : DateTime.fromISO('1970-01-01'),
-    to: to ? DateTime.fromISO(to) : DateTime.now().endOf('year'),
+    to: to ? DateTime.fromISO(to) : DateTime.now(),
   }
 }
 

@@ -102,7 +102,7 @@ export default class StatsController {
       const query = db
         .from('bets')
         .where('bets.user_id', userId)
-        .select(db.raw("date_format(placed_at, '%Y-%m') as key"))
+        .select(db.raw("date_format(placed_at, '%Y-%m') as `key`"))
         .groupBy('key')
         .orderBy('key', 'desc')
       this.selectAggregates(query)
@@ -119,7 +119,7 @@ export default class StatsController {
     const query = db.from('bets').where('bets.user_id', userId)
     dimension.join(query)
     query
-      .select(db.raw(`${dimension.key} as key`), db.raw(`${dimension.label} as label`))
+      .select(db.raw(`${dimension.key} as \`key\``), db.raw(`${dimension.label} as label`))
       .groupByRaw(`${dimension.key}, ${dimension.label}`)
       .orderByRaw('sum(profit_amount) desc')
     this.selectAggregates(query)
