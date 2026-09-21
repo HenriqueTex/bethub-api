@@ -25,6 +25,7 @@ const FreebetsController = () => import('#controllers/freebets_controller')
 const StatsController = () => import('#controllers/stats_controller')
 const BetReceiptsController = () => import('#controllers/bet_receipts_controller')
 const CostsController = () => import('#controllers/costs_controller')
+const GamesController = () => import('#controllers/games_controller')
 
 router.get('/', async () => {
   return {
@@ -91,6 +92,8 @@ router
     router.patch('/freebets/:id/extract', [FreebetsController, 'extract'])
     router.patch('/freebets/:id/discard', [FreebetsController, 'discard'])
     router.patch('/freebets/:id/reopen', [FreebetsController, 'reopen'])
+
+    router.get('/games', [GamesController, 'index'])
 
     router.get('/costs', [CostsController, 'index'])
     router.get('/costs/summary', [CostsController, 'summary'])

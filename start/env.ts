@@ -41,4 +41,6 @@ export default await Env.create(new URL('../', import.meta.url), {
   R2_ACCESS_KEY_ID: Env.schema.string.optional(),
   R2_SECRET_ACCESS_KEY: Env.schema.string.optional(),
   R2_BUCKET: Env.schema.string.optional(),
+
+  FOOTBALL_DATA_TOKEN: Env.schema.string.optional(),
 })
