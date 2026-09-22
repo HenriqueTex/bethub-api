@@ -61,6 +61,9 @@ export default class Bet extends BaseModel {
   @column.dateTime()
   declare eventDate: DateTime | null
 
+  @column({ consume: toBoolean })
+  declare notificationsEnabled: boolean
+
   @column({ consume: toNumber })
   declare odd: number
 

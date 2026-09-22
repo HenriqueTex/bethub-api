@@ -68,6 +68,7 @@ export default class BetsController {
       unitValue,
       userId: user.id,
       isFreebet: data.isFreebet ?? false,
+      notificationsEnabled: data.notificationsEnabled ?? true,
       generatesFreebet,
       freebetValue: generatesFreebet ? (data.freebetValue ?? null) : null,
       freebetExtraction: generatesFreebet ? (data.freebetExtraction ?? 0) : null,

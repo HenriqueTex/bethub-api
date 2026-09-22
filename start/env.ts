@@ -43,4 +43,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   R2_BUCKET: Env.schema.string.optional(),
 
   FOOTBALL_DATA_TOKEN: Env.schema.string.optional(),
+
+  VAPID_PUBLIC_KEY: Env.schema.string.optional(),
+  VAPID_PRIVATE_KEY: Env.schema.string.optional(),
+  VAPID_SUBJECT: Env.schema.string.optional(),
 })

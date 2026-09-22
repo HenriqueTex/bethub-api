@@ -26,6 +26,7 @@ const StatsController = () => import('#controllers/stats_controller')
 const BetReceiptsController = () => import('#controllers/bet_receipts_controller')
 const CostsController = () => import('#controllers/costs_controller')
 const GamesController = () => import('#controllers/games_controller')
+const PushController = () => import('#controllers/push_controller')
 
 router.get('/', async () => {
   return {
@@ -94,6 +95,10 @@ router
     router.patch('/freebets/:id/reopen', [FreebetsController, 'reopen'])
 
     router.get('/games', [GamesController, 'index'])
+
+    router.get('/push/config', [PushController, 'config'])
+    router.post('/push/subscriptions', [PushController, 'store'])
+    router.delete('/push/subscriptions', [PushController, 'destroy'])
 
     router.get('/costs', [CostsController, 'index'])
     router.get('/costs/summary', [CostsController, 'summary'])

@@ -33,6 +33,7 @@ export const betValidator = vine.compile(
       .date({ formats: { utc: true } })
       .optional()
       .nullable(),
+    notificationsEnabled: vine.boolean().optional(),
     odd: vine.number().min(1.01),
     units: vine.number().positive(),
     stakeAmount: vine.number().positive().optional(),
@@ -58,6 +59,7 @@ export const betUpdateValidator = vine.compile(
       .date({ formats: { utc: true } })
       .optional()
       .nullable(),
+    notificationsEnabled: vine.boolean().optional(),
     odd: vine.number().min(1.01).optional(),
     units: vine.number().positive().optional(),
     stakeAmount: vine.number().positive().optional(),
