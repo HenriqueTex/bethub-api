@@ -7,7 +7,10 @@ import { transactionValidator } from '#validators/catalog'
 export default class TransactionsController {
   async index({ auth, params }: HttpContext) {
     const userId = auth.user!.id
-    await BookmakerAccount.query().where('user_id', userId).where('id', params.accountId).firstOrFail()
+    await BookmakerAccount.query()
+      .where('user_id', userId)
+      .where('id', params.accountId)
+      .firstOrFail()
 
     return AccountTransaction.query()
       .where('user_id', userId)

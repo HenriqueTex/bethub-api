@@ -10,7 +10,13 @@ interface ProfitInput {
 
 const round = (value: number) => Math.round(value * 100) / 100
 
-export function calculateProfit({ result, stakeAmount, odd, cashoutAmount, isFreebet }: ProfitInput) {
+export function calculateProfit({
+  result,
+  stakeAmount,
+  odd,
+  cashoutAmount,
+  isFreebet,
+}: ProfitInput) {
   if (isFreebet) {
     // Freebet SNR (Stake Not Returned): o stake não é do apostador.
     // Ganhando, o lucro é apenas o excedente (odd - 1); perdendo, não há perda real.
