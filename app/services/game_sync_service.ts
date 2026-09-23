@@ -49,7 +49,7 @@ export async function syncGames() {
 
   // jogos antigos só ocupam espaço e poluem a busca
   await Game.query()
-    .where('starts_at', '<', from.minus({ days: 7 }).toSQL())
+    .where('starts_at', '<', from.minus({ days: 7 }).toSQL({ includeOffset: false }))
     .delete()
 
   return resultado

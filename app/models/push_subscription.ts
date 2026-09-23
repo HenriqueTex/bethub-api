@@ -13,7 +13,7 @@ export default class PushSubscription extends BaseModel {
   @column()
   declare endpoint: string
 
-  @column()
+  @column({ columnName: 'p256dh' })
   declare p256dh: string
 
   @column()
