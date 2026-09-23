@@ -6,6 +6,7 @@ import AccountTransaction from '#models/account_transaction'
 import Bet from '#models/bet'
 import { accountValidator, accountUpdateValidator } from '#validators/catalog'
 import { accountBalances, emptyBalance } from '#services/account_balance_service'
+import { emptyUsage, usageBy } from '#services/usage_service'
 
 export default class AccountsController {
   async index({ auth }: HttpContext) {
@@ -15,10 +16,14 @@ export default class AccountsController {
       .preload('bookmaker')
       .orderBy('id')
 
-    const balances = await accountBalances(userId)
+    const [balances, usage] = await Promise.all([
+      accountBalances(userId),
+      usageBy(userId, 'bookmaker_account_id'),
+    ])
     return accounts.map((account) => ({
       ...account.serialize(),
       balance: balances.get(account.id) ?? emptyBalance(),
+      ...(usage.get(account.id) ?? emptyUsage()),
     }))
   }
 

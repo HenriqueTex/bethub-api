@@ -2,10 +2,19 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Tipster from '#models/tipster'
 import Bet from '#models/bet'
 import { tipsterValidator } from '#validators/catalog'
+import { emptyUsage, usageBy } from '#services/usage_service'
 
 export default class TipstersController {
   async index({ auth }: HttpContext) {
-    return Tipster.query().where('user_id', auth.user!.id).orderBy('name')
+    const userId = auth.user!.id
+    const [tipsters, usage] = await Promise.all([
+      Tipster.query().where('user_id', userId).orderBy('name'),
+      usageBy(userId, 'tipster_id'),
+    ])
+    return tipsters.map((tipster) => ({
+      ...tipster.serialize(),
+      ...(usage.get(tipster.id) ?? emptyUsage()),
+    }))
   }
 
   async store({ auth, request, response }: HttpContext) {
