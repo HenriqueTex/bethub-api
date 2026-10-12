@@ -1,17 +1,10 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import type { ApiClient } from '@japa/api-client'
-
-let counter = 0
+import { createActiveUser } from '#tests/helpers/auth'
 
 async function setup(client: ApiClient) {
-  counter += 1
-  const register = await client.post('/auth/register').json({
-    fullName: `Freebet User ${counter}`,
-    email: `freebet${counter}-${Math.random().toString(36).slice(2)}@test.com`,
-    password: 'senha12345',
-  })
-  const token = register.body().token.value as string
+  const { token } = await createActiveUser(client, { fullName: 'Freebet User' })
 
   const bookmaker = await client.post('/bookmakers').bearerToken(token).json({ name: 'Bet365' })
   const account = await client

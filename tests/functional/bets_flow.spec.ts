@@ -1,19 +1,11 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import type { ApiClient } from '@japa/api-client'
-
-let counter = 0
+import { createActiveUser } from '#tests/helpers/auth'
 
 async function createUser(client: ApiClient) {
-  counter += 1
-  const email = `user${counter}-${Math.random().toString(36).slice(2)}@test.com`
-  const response = await client.post('/auth/register').json({
-    fullName: `User ${counter}`,
-    email,
-    password: 'senha12345',
-  })
-  response.assertStatus(201)
-  return response.body().token.value as string
+  const { token } = await createActiveUser(client)
+  return token
 }
 
 async function createAccount(client: ApiClient, token: string, deposit?: number) {

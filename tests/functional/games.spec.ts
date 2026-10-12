@@ -4,18 +4,11 @@ import { DateTime } from 'luxon'
 import Game from '#models/game'
 import { GAME_PROVIDERS, syncGames } from '#services/game_sync_service'
 import type { GameProvider } from '#services/game_providers/types'
-
-let counter = 0
+import { createActiveUser } from '#tests/helpers/auth'
 
 async function authenticate(client: any) {
-  counter += 1
-  const response = await client.post('/auth/register').json({
-    fullName: `Games User ${counter}`,
-    email: `games-${counter}-${Math.random().toString(36).slice(2)}@test.com`,
-    password: 'senha12345',
-  })
-  response.assertStatus(201)
-  return response.body().token.value as string
+  const { token } = await createActiveUser(client, { fullName: 'Games User' })
+  return token
 }
 
 test.group('Agenda de jogos', (group) => {

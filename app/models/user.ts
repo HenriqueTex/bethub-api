@@ -10,6 +10,12 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   passwordColumnName: 'password',
 })
 
+/**
+ * pending: aguardando o admin · approved: aprovado, falta ativar pelo e-mail ·
+ * active: pode entrar · rejected: recusado pelo admin.
+ */
+export type UserStatus = 'pending' | 'approved' | 'active' | 'rejected'
+
 export default class User extends compose(BaseModel, AuthFinder) {
   @column({ isPrimary: true })
   declare id: number
@@ -25,6 +31,15 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column({ consume: (value) => Number(value) })
   declare unitValue: number
+
+  @column()
+  declare status: UserStatus
+
+  @column.dateTime({ serializeAs: null })
+  declare approvedAt: DateTime | null
+
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

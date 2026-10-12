@@ -2,14 +2,11 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import type { ApiClient } from '@japa/api-client'
 import { DateTime } from 'luxon'
+import { createActiveUser } from '#tests/helpers/auth'
 
 async function createUser(client: ApiClient) {
-  const email = `usage-${Math.random().toString(36).slice(2)}@test.com`
-  const response = await client
-    .post('/auth/register')
-    .json({ fullName: 'Uso', email, password: 'senha12345' })
-  response.assertStatus(201)
-  return response.body().token.value as string
+  const { token } = await createActiveUser(client, { fullName: 'Uso' })
+  return token
 }
 
 async function createAccount(client: ApiClient, token: string, name: string) {
@@ -68,21 +65,17 @@ test.group('Uso de contas e tipsters', (group) => {
 
     const accounts = await client.get('/accounts').bearerToken(token)
     accounts.assertStatus(200)
-    const byId = new Map(accounts.body().map((account: any) => [account.id, account]))
+    const byId = new Map<number, any>(accounts.body().map((account: any) => [account.id, account]))
 
     assert.equal(byId.get(muito).betCount, 2)
     assert.equal(byId.get(pouco).betCount, 1)
     assert.equal(byId.get(semUso).betCount, 0)
     assert.isNull(byId.get(semUso).lastBetAt)
-    assert.closeTo(
-      DateTime.fromISO(byId.get(pouco).lastBetAt).toMillis(),
-      ontem.toMillis(),
-      2000
-    )
+    assert.closeTo(DateTime.fromISO(byId.get(pouco).lastBetAt).toMillis(), ontem.toMillis(), 2000)
 
     const tipsters = await client.get('/tipsters').bearerToken(token)
     tipsters.assertStatus(200)
-    const tipsterById = new Map(tipsters.body().map((item: any) => [item.id, item]))
+    const tipsterById = new Map<number, any>(tipsters.body().map((item: any) => [item.id, item]))
     assert.equal(tipsterById.get(tipster).betCount, 3)
     assert.equal(tipsterById.get(tipsterParado).betCount, 0)
   })

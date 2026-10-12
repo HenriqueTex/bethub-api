@@ -14,3 +14,15 @@ export const loginValidator = vine.compile(
     password: vine.string(),
   })
 )
+
+export const accountTokenValidator = vine.compile(
+  vine.object({
+    token: vine.string().trim().minLength(20).maxLength(200),
+  })
+)
+
+export const resendActivationValidator = vine.compile(
+  vine.object({
+    email: vine.string().trim().email().normalizeEmail(),
+  })
+)

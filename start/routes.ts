@@ -11,6 +11,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
 const AuthController = () => import('#controllers/auth_controller')
+const AccountApprovalsController = () => import('#controllers/account_approvals_controller')
 const BookmakersController = () => import('#controllers/bookmakers_controller')
 const AccountsController = () => import('#controllers/accounts_controller')
 const TransactionsController = () => import('#controllers/transactions_controller')
@@ -39,6 +40,11 @@ router
     router.post('/register', [AuthController, 'register'])
     router.post('/login', [AuthController, 'login'])
     router.post('/dev-login', [AuthController, 'devLogin'])
+    router.post('/activate', [AuthController, 'activate'])
+    router.post('/activation/resend', [AuthController, 'resendActivation'])
+    router.get('/approvals', [AccountApprovalsController, 'show'])
+    router.post('/approvals/approve', [AccountApprovalsController, 'approve'])
+    router.post('/approvals/reject', [AccountApprovalsController, 'reject'])
     router.get('/me', [AuthController, 'me']).use(middleware.auth())
     router.delete('/logout', [AuthController, 'logout']).use(middleware.auth())
   })

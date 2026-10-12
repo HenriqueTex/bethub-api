@@ -47,4 +47,18 @@ export default await Env.create(new URL('../', import.meta.url), {
   VAPID_PUBLIC_KEY: Env.schema.string.optional(),
   VAPID_PRIVATE_KEY: Env.schema.string.optional(),
   VAPID_SUBJECT: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | E-mail transacional (SMTP da Hostinger) e links do front
+  |----------------------------------------------------------
+  */
+  SMTP_HOST: Env.schema.string.optional({ format: 'host' }),
+  SMTP_PORT: Env.schema.number.optional(),
+  SMTP_USER: Env.schema.string.optional(),
+  SMTP_PASS: Env.schema.string.optional(),
+  MAIL_FROM: Env.schema.string.optional(),
+  MAIL_REPLY_TO: Env.schema.string.optional(),
+  ADMIN_NOTIFY_EMAIL: Env.schema.string.optional(),
+  WEB_URL: Env.schema.string.optional({ format: 'url', tld: false }),
 })

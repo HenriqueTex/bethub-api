@@ -3,6 +3,7 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import env from '#start/env'
 import BetImageAnalysisService from '#services/bet_image_analysis_service'
 import { parseAnalysis } from '#services/bet_analysis_contract'
+import { createActiveUser } from '#tests/helpers/auth'
 
 test.group('Importação de aposta', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
@@ -13,13 +14,7 @@ test.group('Importação de aposta', (group) => {
   })
 
   test('valida entrada e repassa texto com usuário e modo', async ({ client, assert, cleanup }) => {
-    const registration = await client.post('/auth/register').json({
-      fullName: 'Import test',
-      email: `import-${Date.now()}@test.com`,
-      password: 'senha12345',
-    })
-    registration.assertStatus(201)
-    const token = registration.body().token.value
+    const { token, userId } = await createActiveUser(client, { fullName: 'Import test' })
     const originalKey = env.get('GEMINI_API_KEY')
     env.set('GEMINI_API_KEY', 'test-only')
     const original = BetImageAnalysisService.prototype.analyzeImage
@@ -59,7 +54,7 @@ test.group('Importação de aposta', (group) => {
       .json({ contextText: 'A x B, odd 2, R$100', mode: 'punter', timeZone: 'America/Sao_Paulo' })
     valid.assertStatus(200)
     assert.equal(valid.body().stakeAmount, 100)
-    assert.equal(calls[0].userId, registration.body().user.id)
+    assert.equal(calls[0].userId, userId)
     assert.equal(calls[0].mode, 'punter')
     assert.isUndefined(calls[0].filePath)
   })
