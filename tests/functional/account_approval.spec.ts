@@ -5,6 +5,7 @@ import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import User from '#models/user'
 import { testOutbox } from '#services/mail_service'
+import { renotifyPendingSignups } from '#services/account_approval_service'
 
 let counter = 0
 
@@ -116,6 +117,21 @@ test.group('Cadastro com aprovação manual', (group) => {
 
     const preview = await client.get('/auth/approvals').qs({ token })
     preview.assertStatus(410)
+  })
+
+  test('reaviso de pendentes troca o link de aprovação', async ({ client, assert }) => {
+    const { email } = await registerPending(client)
+    const oldToken = lastTokenFrom('Novo cadastro pendente').token
+
+    const results = await renotifyPendingSignups()
+    assert.deepInclude(results, { email, sent: true })
+    const newToken = lastTokenFrom('Novo cadastro pendente').token
+    assert.notEqual(newToken, oldToken)
+
+    const old = await client.get('/auth/approvals').qs({ token: oldToken })
+    old.assertStatus(410)
+    const fresh = await client.get('/auth/approvals').qs({ token: newToken })
+    fresh.assertStatus(200)
   })
 
   test('link de ativação expirado é recusado', async ({ client }) => {

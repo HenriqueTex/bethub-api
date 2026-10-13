@@ -25,6 +25,20 @@ export async function registerPendingUser(data: {
   return user
 }
 
+/**
+ * Reemite o link de aprovação de quem ainda está pendente (ex.: o aviso
+ * original falhou por SMTP). O link antigo deixa de valer.
+ */
+export async function renotifyPendingSignups() {
+  const pending = await User.query().where('status', 'pending').orderBy('created_at')
+  const results: { email: string; sent: boolean }[] = []
+  for (const user of pending) {
+    const token = await issueToken(user.id, 'approval')
+    results.push({ email: user.email, sent: await sendMailSafely(newSignupForAdmin(user, token)) })
+  }
+  return results
+}
+
 async function decide(rawToken: string, approve: boolean): Promise<DecisionResult> {
   const outcome = await db.transaction(async (trx) => {
     const token = await consumeToken(rawToken, 'approval', trx)
